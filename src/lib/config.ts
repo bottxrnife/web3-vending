@@ -16,4 +16,4 @@ export const paymentConfig: PaymentConfig = {
 	destinationChainId: 84532,
 };
 
-export const IFTTT_WEBHOOK_URL = process.env.IFTTT_WEBHOOK_URL || ""; // PLACE YOUR IFTTT WEBHOOK URL IN .env.local 
+export const DISPENSER_WEBHOOK_URL = process.env.DISPENSER_WEBHOOK_URL || ""; // Place your webhook URL in .env.local 
