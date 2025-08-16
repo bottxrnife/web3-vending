@@ -1,17 +1,18 @@
-# Checkpoint 2 — Network Configuration
+# Checkpoint 3 — Wallet Provider Integration
 
-This checkpoint introduces network and application configuration needed for on-chain interactions and environment setup.
+This checkpoint adds the wallet provider component to enable wallet connectivity and context throughout the app.
 
 ## Includes
-- Everything from Checkpoint 1
-- Network config: `src/lib/config.ts`, `src/lib/chains.ts`
+- Everything from Checkpoint 2
+- Wallet provider: `src/components/WalletProvider.tsx`
 
 ## Why this step
-- Centralizes chain IDs, RPCs, and app constants
-- Prepares the codebase for wallet and contract integrations
+- Introduces shared wallet state and connectors in a dedicated component
+- Lays the groundwork for any UI to access the connected account and network
 
 ## Quick check
-- Review `src/lib/chains.ts` and `src/lib/config.ts` to confirm chain data and app constants are correct
+- Inspect `src/components/WalletProvider.tsx` to verify configured chains/connectors
+- Ensure the provider is imported where needed to wrap the app (e.g., layout)
 
 ### Hardware integration
-- Subsequent checkpoints wire a generic webhook endpoint that your ESP32 can listen to for dispensing. You can alternatively integrate via MDB for standard vending machines. 
+- A generic webhook flow is added next. The ESP32 listens to the webhook to dispense the item. For vending machines, you can adapt the hardware layer to use the MDB protocol. 
