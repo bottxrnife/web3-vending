@@ -1,19 +1,19 @@
-# Checkpoint 4 — API Route and Contract ABIs
+# Checkpoint 5 — StepFlow UI and Hardware
 
-This checkpoint adds a serverless API route and the contract ABIs required for on-chain interactions.
+This checkpoint completes the flow with the interactive StepFlow UI and includes the ESP32 firmware directory.
 
 ## Includes
-- Everything from Checkpoint 3
-- API route: `src/app/api/webhook/route.ts`
-- Contract ABIs: `src/lib/oftAbi.ts`, `src/lib/usdcAbi.ts`
+- Everything from Checkpoint 4
+- UI flow: `src/components/StepFlow.tsx`
+- Hardware: `esp32_code/`
 
 ## Why this step
-- Introduces backend functionality (webhook endpoint) for integrations
-- Centralizes ABI artifacts for consistent contract interaction
+- Delivers the end-to-end user journey in the UI
+- Pairs on-chain actions with the embedded hardware component
 
 ## Quick check
-- Run `npm run dev` and test the API at `/api/webhook` (method per implementation)
-- Confirm ABIs export the expected fragments
+- Open the app and navigate to the UI that uses `StepFlow.tsx`
+- Review `esp32_code/` for firmware and upload instructions
 
 ### Hardware integration
-- The server forwards to a generic webhook URL. The ESP32 listens for this webhook and dispenses the item. This can be adapted to vending machines via the MDB protocol. 
+- After on-chain confirmation, the app posts to `/api/webhook`, which forwards to your `DISPENSER_WEBHOOK_URL`. The ESP32 listens for this webhook and dispenses the item. You can alternatively integrate with vending machines using the MDB protocol. 
