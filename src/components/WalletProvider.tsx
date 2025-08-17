@@ -21,7 +21,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			connectors: [
 				injected({ shimDisconnect: true }),
 				coinbaseWallet({ appName: "Omnichain Vending", preference: "all" }),
-				walletConnect({ projectId, showQrModal: false }),
+				walletConnect({
+					projectId,
+					showQrModal: true,
+					metadata: {
+						name: "Omnivend",
+						description: "Web3 vending machine",
+						url: "https://localhost:3000",
+						icons: ["https://avatars.githubusercontent.com/u/37784886?s=200&v=4"],
+					},
+				}),
 			],
 		});
 	}, []);

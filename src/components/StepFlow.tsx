@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useChainId, useSwitchChain, useWaitForTransactionReceipt, useWriteContract, useReadContract, useConnect } from "wagmi";
 import { parseUnits } from "viem";
-import { SUPPORTED_CHAINS, DEFAULT_PRICE_USDC } from "@/lib/chains";
+import { SUPPORTED_CHAINS, DEFAULT_PRICE_USDC, L0_CHAIN_OPTIONS } from "@/lib/chains";
 import { paymentConfig } from "@/lib/config";
 import { erc20Abi } from "@/lib/usdcAbi";
 import { oftComposerAbi } from "@/lib/oftAbi";
@@ -207,7 +207,6 @@ export function StepFlow() {
         {step === "welcome" && (
           <div className="text-center py-16">
             <div className="text-5xl md:text-7xl font-extrabold tracking-tight">Welcome to Ominvend</div>
-            <div className="mt-2 text-white/80 text-lg">the web3 vending machine</div>
             <div className="mt-1 text-white/70 text-sm">Machine: Candy Dispenser Demo</div>
 
             <div className="relative mx-auto w-40 h-40 md:w-48 md:h-48 mt-10">
@@ -224,13 +223,32 @@ export function StepFlow() {
 
         {step === "choose-chain" && (
           <div className="card">
-            <div className="text-2xl font-bold mb-4 text-center">Choose your chain</div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {SUPPORTED_CHAINS.map(chain => (
-                <button key={chain.id} className="button-primary !bg-white/10 hover:!bg-white/20 !text-white" onClick={() => handleSelectChain(chain.id)}>
-                  {chain.name}
-                </button>
-              ))}
+            <div className="text-2xl font-bold mb-4 text-center">How would you like to pay?</div>
+            <div className="grid gap-3">
+              <a
+                href={coinbaseOnrampUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="button-primary !bg-white/10 hover:!bg-white/20 !text-white inline-flex items-center justify-center w-full"
+              >
+                Apple Pay
+              </a>
+              <div className="text-white/70 text-sm mt-2">or choose a chain (LayerZero-supported)</div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {L0_CHAIN_OPTIONS.map((opt) => {
+                  const enabled = SUPPORTED_CHAINS.some((c) => c.id === opt.id) && Boolean(paymentConfig.usdcAddressByChainId[opt.id]);
+                  return (
+                    <button
+                      key={opt.id}
+                      className={`button-primary !bg-white/10 hover:!bg-white/20 !text-white ${enabled ? "" : "opacity-40 cursor-not-allowed"}`}
+                      onClick={() => enabled && handleSelectChain(opt.id)}
+                      disabled={!enabled}
+                    >
+                      {opt.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -239,16 +257,6 @@ export function StepFlow() {
           <div className="card">
             <div className="text-2xl font-bold mb-2 text-center">Connect your wallet</div>
             <PhoneConnectOptions />
-            <div className="mt-4">
-              <a
-                href={coinbaseOnrampUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="button-primary !bg-white/10 hover:!bg-white/20 !text-white inline-flex items-center justify-center w-full"
-              >
-                Buy crypto with Coinbase (Apple Pay)
-              </a>
-            </div>
           </div>
         )}
 
@@ -262,14 +270,6 @@ export function StepFlow() {
             </div>
             <div className="grid gap-3 mt-6">
               <button className="button-primary w-full" onClick={handlePay}>Pay</button>
-              <a
-                href={coinbaseOnrampUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="button-primary !bg-white/10 hover:!bg-white/20 !text-white inline-flex items-center justify-center w-full"
-              >
-                Need crypto? Buy with Coinbase (Apple Pay)
-              </a>
             </div>
           </div>
         )}

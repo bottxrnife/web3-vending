@@ -1,16 +1,17 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { WalletProvider } from "@/components/WalletProvider";
 
 export const metadata: Metadata = {
-  title: "Omnichain Vending Kiosk",
-  description: "Pay with any chain; get instant candy.",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+  title: "Omnivend",
+  description: "Web3 vending machine",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: "#0ea5e9",
 };
 

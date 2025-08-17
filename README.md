@@ -35,7 +35,7 @@ npm run dev
 ## Paying
 - Connect with your mobile wallet (Injected/Coinbase/WalletConnect)
 - Confirm approval + payment; the app shows a receipt on success
-- Need crypto? Tap “Buy with Coinbase (Apple Pay)” to onramp
+- Need crypto? Tap “Pay with Apple Pay” to onramp
 
 ## Notes
 - Replace `oftComposerAbi` and `oftOrComposerAddress` with your actual contract ABI/address and function parameters
