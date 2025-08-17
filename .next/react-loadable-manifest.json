@@ -5,11 +5,15 @@
   },
   "../node_modules/@wagmi/connectors/dist/esm/coinbaseWallet.js -> @coinbase/wallet-sdk": {
     "id": "../node_modules/@wagmi/connectors/dist/esm/coinbaseWallet.js -> @coinbase/wallet-sdk",
-    "files": []
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_coinbase_wallet-sdk_dist_index_js.js"
+    ]
   },
   "../node_modules/@wagmi/connectors/dist/esm/coinbaseWallet.js -> cbw-sdk": {
     "id": "../node_modules/@wagmi/connectors/dist/esm/coinbaseWallet.js -> cbw-sdk",
-    "files": []
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_cbw-sdk_dist_index_js.js"
+    ]
   },
   "../node_modules/@wagmi/connectors/dist/esm/metaMask.js -> @metamask/sdk": {
     "id": "../node_modules/@wagmi/connectors/dist/esm/metaMask.js -> @metamask/sdk",

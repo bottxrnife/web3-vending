@@ -3,8 +3,8 @@
 import { ReactNode, useMemo } from "react";
 import { WagmiProvider, http, createConfig } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { sepolia, baseSepolia } from "wagmi/chains";
-import { walletConnect } from "wagmi/connectors";
+import { mainnet, base } from "wagmi/chains";
+import { walletConnect, injected, coinbaseWallet } from "wagmi/connectors";
 
 const queryClient = new QueryClient();
 
@@ -12,17 +12,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	const config = useMemo(() => {
 		const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "";
 		return createConfig({
-			chains: [sepolia, baseSepolia],
+			chains: [mainnet, base],
 			transports: {
-				[sepolia.id]: http(),
-				[baseSepolia.id]: http(),
+				[mainnet.id]: http(),
+				[base.id]: http(),
 			},
 			ssr: true,
 			connectors: [
-				walletConnect({
-					projectId,
-					showQrModal: true, // ensure QR-only modal appears
-				}),
+				injected({ shimDisconnect: true }),
+				coinbaseWallet({ appName: "Omnichain Vending", preference: "all" }),
+				walletConnect({ projectId, showQrModal: false }),
 			],
 		});
 	}, []);

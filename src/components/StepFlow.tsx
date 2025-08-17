@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useChainId, useSwitchChain, useWaitForTransactionReceipt, useWriteContract, useReadContract, useConnect } from "wagmi";
-import { formatUnits, parseUnits } from "viem";
+import { parseUnits } from "viem";
 import { SUPPORTED_CHAINS, DEFAULT_PRICE_USDC } from "@/lib/chains";
 import { paymentConfig } from "@/lib/config";
 import { erc20Abi } from "@/lib/usdcAbi";
@@ -17,12 +17,11 @@ export function StepFlow() {
   const amount = String(DEFAULT_PRICE_USDC);
   const resetTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState<boolean>(false);
-  const hasOpenedWalletConnectRef = useRef<boolean>(false);
 
   const { address, isConnected } = useAccount();
   const activeChainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
-  const { connect, connectors } = useConnect();
+  const { connect, connectors, status: connectStatus, error: connectError } = useConnect();
 
   const usdcAddress = useMemo(() => paymentConfig.usdcAddressByChainId[selectedChainId], [selectedChainId]);
 
@@ -39,27 +38,10 @@ export function StepFlow() {
     };
   }, [step]);
 
-  // Auto-open WalletConnect QR when on connect step; advance to review once connected & on correct chain
+  // Once connected, ensure correct chain then move to review
   useEffect(() => {
     async function run() {
       if (step !== "connect") return;
-
-      // Not connected → trigger WalletConnect QR once
-      if (!isConnected && !hasOpenedWalletConnectRef.current) {
-        const wc = connectors.find(c => c.id === "walletConnect" || c.name.toLowerCase().includes("walletconnect"));
-        if (wc) {
-          hasOpenedWalletConnectRef.current = true;
-          try {
-            await connect({ connector: wc, chainId: selectedChainId });
-          } catch (e) {
-            // If user dismisses, allow re-open on next step enter
-            hasOpenedWalletConnectRef.current = false;
-          }
-        }
-        return;
-      }
-
-      // Connected → ensure correct chain, then move to review
       if (isConnected) {
         if (activeChainId !== selectedChainId) {
           try {
@@ -70,7 +52,7 @@ export function StepFlow() {
       }
     }
     run();
-  }, [step, isConnected, connectors, connect, activeChainId, selectedChainId, switchChainAsync]);
+  }, [step, isConnected, activeChainId, selectedChainId, switchChainAsync]);
 
   const { writeContractAsync } = useWriteContract();
 
@@ -91,20 +73,10 @@ export function StepFlow() {
   });
 
   useEffect(() => {
-    async function maybeTriggerWebhook() {
-      if (waitReceipt.status === "success" && txHash) {
-        try {
-          await fetch("/api/webhook", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ txHash, chainId: selectedChainId, amount }),
-          });
-        } catch {}
-        setStep("receipt");
-      }
+    if (waitReceipt.status === "success" && txHash) {
+      setStep("receipt");
     }
-    maybeTriggerWebhook();
-  }, [waitReceipt.status, txHash, selectedChainId, amount]);
+  }, [waitReceipt.status, txHash]);
 
   function resetFlow() {
     if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
@@ -112,7 +84,6 @@ export function StepFlow() {
     setStep("welcome");
     setSelectedChainId(SUPPORTED_CHAINS[0].id);
     setTxHash(null);
-    hasOpenedWalletConnectRef.current = false;
   }
 
   async function handleBegin() {
@@ -121,7 +92,6 @@ export function StepFlow() {
 
   async function handleSelectChain(chainId: number) {
     setSelectedChainId(chainId);
-    hasOpenedWalletConnectRef.current = false;
     setStep("connect");
   }
 
@@ -129,7 +99,6 @@ export function StepFlow() {
     try {
       setStep("paying");
 
-      // 1) Approve USDC to the OFT/Composer router if needed
       await writeContractAsync({
         address: usdcAddress,
         abi: erc20Abi,
@@ -138,9 +107,6 @@ export function StepFlow() {
         chainId: selectedChainId,
       });
 
-      // 2) Call your OFT/Composer contract to execute cross-chain payment
-      // NOTE: Replace with your actual function and args. The placeholder assumes
-      // a generic sendOFT(token, dstChainId, to, amount, options)
       const toBytes32 = `0x000000000000000000000000${(address || "").slice(2)}` as `0x${string}`;
 
       const tx = await writeContractAsync({
@@ -154,7 +120,7 @@ export function StepFlow() {
           amountInSmallest,
           "0x"
         ],
-        value: 0n, // set a fee value if your function requires native gas fee
+        value: 0n,
         chainId: selectedChainId,
       });
 
@@ -164,11 +130,31 @@ export function StepFlow() {
     }
   }
 
+  function PhoneConnectOptions() {
+    return (
+      <div className="grid gap-3">
+        {connectors.map((c) => (
+          <button
+            key={c.uid}
+            className="button-primary !bg-white/10 hover:!bg-white/20 !text-white"
+            onClick={() => connect({ connector: c, chainId: selectedChainId })}
+            disabled={connectStatus === "pending"}
+          >
+            Connect with {c.name}
+          </button>
+        ))}
+        {connectError && <div className="text-sm text-red-300">{connectError.message}</div>}
+      </div>
+    );
+  }
+
+  const coinbaseOnrampUrl = "https://pay.coinbase.com/buy";
+
   function Receipt() {
     return (
       <div className="card max-w-md mx-auto text-center">
         <div className="text-2xl font-bold mb-2">Payment Received</div>
-        <div className="text-white/80 mb-4">Dispensing your candy...</div>
+        <div className="text-white/80 mb-4">Thank you!</div>
         <div className="text-left bg-black/30 rounded-xl p-4 break-all">
           <div className="text-white/80">Amount</div>
           <div className="text-white font-semibold mb-2">{amount} USDC</div>
@@ -185,7 +171,6 @@ export function StepFlow() {
   return (
     <div className="min-h-screen kiosk-safe-area flex items-center justify-center p-4">
       <div className="w-full max-w-5xl relative">
-        {/* Cancel button (hidden on welcome) */}
         {step !== "welcome" && (
           <button
             className="absolute top-2 right-2 z-50 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/10 shadow-md"
@@ -195,7 +180,6 @@ export function StepFlow() {
           </button>
         )}
 
-        {/* Confirmation Modal */}
         {showCancelConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCancelConfirm(false)} />
@@ -221,33 +205,19 @@ export function StepFlow() {
         )}
 
         {step === "welcome" && (
-          <div className="relative overflow-hidden">
-            {/* Animated orbs */}
-            <div className="pointer-events-none absolute -top-20 -left-20 w-72 h-72 rounded-full bg-brand-500/30 blur-3xl animate-pulse" />
-            <div className="pointer-events-none absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-fuchsia-500/30 blur-3xl animate-pulse" />
-            <div className="pointer-events-none absolute top-1/3 -right-10 w-40 h-40 rounded-full bg-emerald-400/20 blur-2xl animate-bounce" />
+          <div className="text-center py-16">
+            <div className="text-5xl md:text-7xl font-extrabold tracking-tight">Welcome to Ominvend</div>
+            <div className="mt-2 text-white/80 text-lg">the web3 vending machine</div>
+            <div className="mt-1 text-white/70 text-sm">Machine: Candy Dispenser Demo</div>
 
-            <div className="text-center py-16">
-              <div className="text-5xl md:text-7xl font-extrabold tracking-tight animate-float bg-clip-text text-transparent bg-gradient-to-r from-white via-brand-200 to-white">
-                Tap to Pay with Any Chain
-              </div>
-              <div className="mt-4 text-white/80 text-lg animate-float" style={{ animationDelay: "0.6s" }}>
-                Fast, secure, and touch-friendly kiosk experience
-              </div>
-
-              <div className="relative mx-auto w-40 h-40 md:w-48 md:h-48 mt-10">
-                <div className="absolute inset-0 rounded-full bg-brand-500/20 animate-ping" />
-                <button
-                  className="relative z-10 w-full h-full rounded-full bg-brand-500 hover:bg-brand-400 active:bg-brand-600 text-white text-2xl font-bold shadow-2xl focus:outline-none focus:ring-4 focus:ring-white/40 transition"
-                  onClick={handleBegin}
-                >
-                  Start
-                </button>
-              </div>
-
-              <div className="mt-8 text-white/70 text-sm">
-                Pay with your favorite chain • WalletConnect ready
-              </div>
+            <div className="relative mx-auto w-40 h-40 md:w-48 md:h-48 mt-10">
+              <div className="absolute inset-0 rounded-full bg-brand-500/20 animate-ping" />
+              <button
+                className="relative z-10 w-full h-full rounded-full bg-brand-500 hover:bg-brand-400 active:bg-brand-600 text-white text-2xl font-bold shadow-2xl focus:outline-none focus:ring-4 focus:ring-white/40 transition"
+                onClick={handleBegin}
+              >
+                Start
+              </button>
             </div>
           </div>
         )}
@@ -266,9 +236,19 @@ export function StepFlow() {
         )}
 
         {step === "connect" && (
-          <div className="card text-center">
-            <div className="text-2xl font-bold mb-2">Scan QR to Connect</div>
-            <div className="text-white/80">A WalletConnect QR code has been opened. Scan it using your phone to continue.</div>
+          <div className="card">
+            <div className="text-2xl font-bold mb-2 text-center">Connect your wallet</div>
+            <PhoneConnectOptions />
+            <div className="mt-4">
+              <a
+                href={coinbaseOnrampUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="button-primary !bg-white/10 hover:!bg-white/20 !text-white inline-flex items-center justify-center w-full"
+              >
+                Buy crypto with Coinbase (Apple Pay)
+              </a>
+            </div>
           </div>
         )}
 
@@ -280,7 +260,17 @@ export function StepFlow() {
               <div className="text-white text-xl font-semibold">{amount} USDC</div>
               <div className="text-white/80 mt-2">Chain: <span className="text-white">{SUPPORTED_CHAINS.find(c => c.id === selectedChainId)?.name}</span></div>
             </div>
-            <button className="button-primary mt-6 w-full" onClick={handlePay}>Pay</button>
+            <div className="grid gap-3 mt-6">
+              <button className="button-primary w-full" onClick={handlePay}>Pay</button>
+              <a
+                href={coinbaseOnrampUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="button-primary !bg-white/10 hover:!bg-white/20 !text-white inline-flex items-center justify-center w-full"
+              >
+                Need crypto? Buy with Coinbase (Apple Pay)
+              </a>
+            </div>
           </div>
         )}
 

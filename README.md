@@ -1,11 +1,11 @@
-# Omnichain Vending Kiosk (Frontend)
+# Omnichain Vending (Mobile Web)
 
-A kiosk-style web app to accept USDC on any supported chain and trigger a physical candy dispenser via a generic webhook after on-chain confirmation. The ESP32 listens for the webhook and dispenses the item. This can also be adapted to drive vending machines via the MDB protocol.
+A mobile-first web app to accept USDC on supported chains and complete a purchase after on-chain confirmation. Users can also fund via Coinbase Onramp (Apple Pay, etc.).
 
 ## Tech Stack
 - Next.js + React + TypeScript
 - Tailwind CSS
-- Wagmi + RainbowKit + viem (WalletConnect QR for kiosk)
+- Wagmi + viem (mobile wallet connect)
 
 ## Quick Start
 
@@ -18,25 +18,26 @@ npm install
 ```bash
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=YOUR_WALLETCONNECT_PROJECT_ID
 NEXT_PUBLIC_DEFAULT_PRICE_USDC=1
-DISPENSER_WEBHOOK_URL=https://your-webhook-endpoint.example.com
 ```
 
-3. Configure the payment routing in `src/lib/config.ts`:
-- `usdcAddressByChainId`: USDC token addresses per chain you support
-- `oftOrComposerAddress`: Your LayerZero OFT/Composer router on the source chain
-- `destinationChainId`: The target EVM chain ID for settlement (e.g., Base = 8453)
+3. Configure payment routing in `src/lib/config.ts`:
+- `usdcAddressByChainId`: token addresses per chain you support
+- `oftOrComposerAddress`: your LayerZero OFT/Composer router on the source chain
+- `destinationChainId`: target EVM chain ID for settlement
 
 4. Run the dev server:
 ```bash
 npm run dev
 ```
 
-5. Open `http://localhost:3000` on your kiosk device (iPad). Add to Home Screen for full-screen experience.
+5. Open `http://localhost:3000` on your phone. Add to Home Screen for full-screen experience.
 
-## Webhook Trigger
-The app calls `/api/webhook` after a successful on-chain confirmation, which forwards to your configured `DISPENSER_WEBHOOK_URL`. Your ESP32 should listen for this webhook and actuate the dispenser. Alternatively, you can adapt the hardware to use the MDB protocol for standard vending machine interfaces.
+## Paying
+- Connect with your mobile wallet (Injected/Coinbase/WalletConnect)
+- Confirm approval + payment; the app shows a receipt on success
+- Need crypto? Tap “Buy with Coinbase (Apple Pay)” to onramp
 
 ## Notes
-- Replace `oftComposerAbi` and `oftOrComposerAddress` with your actual Composer or OFT contract ABI and address. Call parameters may differ.
-- You can customize supported chains in `src/lib/chains.ts`.
-- The UI auto-resets to the welcome screen ~15s after receipt. 
+- Replace `oftComposerAbi` and `oftOrComposerAddress` with your actual contract ABI/address and function parameters
+- Customize supported chains in `src/lib/chains.ts`
+- UI auto-resets to the welcome screen ~15s after receipt

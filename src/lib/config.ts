@@ -3,17 +3,15 @@ export type Address = `0x${string}`;
 export type PaymentConfig = {
 	usdcAddressByChainId: Record<number, Address>;
 	oftOrComposerAddress: Address; // Your OFT or Composer router contract address on source chain
-	destinationChainId: number; // EVM chain ID for settlement (e.g., Base Sepolia = 84532)
+	destinationChainId: number; // EVM chain ID for settlement (e.g., Base mainnet = 8453)
 };
 
 // NOTE: Replace these placeholder addresses with real ones for your deployment
 export const paymentConfig: PaymentConfig = {
 	usdcAddressByChainId: {
-		11155111: "0x9229c70d0388213894ddAFB0edf6fE38090F2FcC", // Sepolia USDC (test address provided)
-		84532: "0x9229c70d0388213894ddAFB0edf6fE38090F2FcC", // Base Sepolia USDC (test address provided)
+		1: "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // Ethereum mainnet USDC
+		8453: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // Base mainnet USDC
 	},
 	oftOrComposerAddress: "0x0000000000000000000000000000000000000000",
-	destinationChainId: 84532,
-};
-
-export const DISPENSER_WEBHOOK_URL = process.env.DISPENSER_WEBHOOK_URL || ""; // Place your webhook URL in .env.local 
+	destinationChainId: 8453,
+}; 
