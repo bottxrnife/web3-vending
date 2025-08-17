@@ -12,7 +12,7 @@ type Step = "welcome" | "choose-chain" | "connect" | "review" | "paying" | "rece
 
 export function StepFlow() {
   const [step, setStep] = useState<Step>("welcome");
-  const [selectedChainId, setSelectedChainId] = useState<number>(1);
+  const [selectedChainId, setSelectedChainId] = useState<number>(SUPPORTED_CHAINS[0].id);
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
   const amount = String(DEFAULT_PRICE_USDC);
   const resetTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -110,7 +110,7 @@ export function StepFlow() {
     if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
     setShowCancelConfirm(false);
     setStep("welcome");
-    setSelectedChainId(1);
+    setSelectedChainId(SUPPORTED_CHAINS[0].id);
     setTxHash(null);
     hasOpenedWalletConnectRef.current = false;
   }
