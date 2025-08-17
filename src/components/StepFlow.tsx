@@ -17,6 +17,65 @@ export function StepFlow() {
   const amount = String(DEFAULT_PRICE_USDC);
   const resetTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState<boolean>(false);
+  const hasOpenedWalletConnectRef = useRef<boolean>(false);
+
+  // Generate onramp URL with session token
+  async function getOnrampUrl(): Promise<string> {
+    if (!address) {
+      // Fallback to static URL if no address
+      return `https://pay.coinbase.com/buy/select-asset?appId=${process.env.NEXT_PUBLIC_CDP_PROJECT_ID || ''}&addresses=${encodeURIComponent(address || '')}&assets=USDC&defaultAsset=USDC&defaultNetwork=base`;
+    }
+
+    try {
+      const response = await fetch('/api/onramp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to get onramp URL:', await response.text());
+        // Fallback to static URL
+        return `https://pay.coinbase.com/buy/select-asset?appId=${process.env.NEXT_PUBLIC_CDP_PROJECT_ID || ''}&addresses=${encodeURIComponent(address || '')}&assets=USDC&defaultAsset=USDC&defaultNetwork=base`;
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error('Error getting onramp URL:', error);
+      // Fallback to static URL
+      return `https://pay.coinbase.com/buy/select-asset?appId=${process.env.NEXT_PUBLIC_CDP_PROJECT_ID || ''}&addresses=${encodeURIComponent(address || '')}&assets=USDC&defaultAsset=USDC&defaultNetwork=base`;
+    }
+  }
+
+  // Apple Pay button component
+  function ApplePayButton() {
+    const [onrampUrl, setOnrampUrl] = useState<string>('');
+    const [loading, setLoading] = useState(false);
+
+    const handleClick = async () => {
+      setLoading(true);
+      try {
+        const url = await getOnrampUrl();
+        setOnrampUrl(url);
+        window.open(url, '_blank');
+      } catch (error) {
+        console.error('Failed to open onramp:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    return (
+      <button
+        onClick={handleClick}
+        disabled={loading}
+        className="button-primary !bg-white/10 hover:!bg-white/20 !text-white inline-flex items-center justify-center w-full"
+      >
+        {loading ? 'Loading...' : 'Apple Pay'}
+      </button>
+    );
+  }
 
   const { address, isConnected } = useAccount();
   const activeChainId = useChainId();
@@ -225,14 +284,7 @@ export function StepFlow() {
           <div className="card">
             <div className="text-2xl font-bold mb-4 text-center">How would you like to pay?</div>
             <div className="grid gap-3">
-              <a
-                href={coinbaseOnrampUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="button-primary !bg-white/10 hover:!bg-white/20 !text-white inline-flex items-center justify-center w-full"
-              >
-                Apple Pay
-              </a>
+              <ApplePayButton />
               <div className="text-white/70 text-sm mt-2">or choose a chain (LayerZero-supported)</div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {L0_CHAIN_OPTIONS.map((opt) => {
